@@ -1,0 +1,2 @@
+defmodule LinkedList do
+end
