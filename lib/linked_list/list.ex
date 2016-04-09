@@ -5,9 +5,9 @@ defmodule LinkedList.List do
       alias __MODULE__
 
       @type t :: pid
-      @type linked_list_struct :: %__MODULE__{ head: Node.t }
       @type maybe_node :: Node.t | none
-      defstruct head: nil
+      @type linked_list_struct :: %__MODULE__{ head: maybe_node, tail: maybe_node }
+      defstruct head: nil, tail: nil
 
       @spec new :: __MODULE__.t
       def new do
@@ -21,7 +21,7 @@ defmodule LinkedList.List do
       def new(node) when is_pid(node) do
         ll = new
         Agent.update(ll, fn list ->
-          %__MODULE__{ list | head: node }
+          %__MODULE__{ list | head: node, tail: node }
         end)
         ll
       end
@@ -46,11 +46,7 @@ defmodule LinkedList.List do
 
       @spec tail(__MODULE__.t) :: maybe_node
       def tail(ll) do
-        case Agent.get(ll, &(&1)) do
-          %{ head: nil } -> nil
-          %{ head: head } ->
-            find_tail(head)
-        end
+        Agent.get(ll, fn %{tail: tail} -> tail end)
       end
 
       @spec append(__MODULE__.t, Node.t) :: __MODULE__.t
@@ -58,10 +54,13 @@ defmodule LinkedList.List do
         case Agent.get(ll, &(&1)) do
           %{head: nil } ->
             Agent.update(ll, fn list ->
-              %__MODULE__{ list | head: n }
+              %__MODULE__{ list | head: n, tail: n }
             end)
           _ ->
             Node.next(tail(ll), n)
+            Agent.update(ll, fn list ->
+              %__MODULE__{ list | tail: n }
+            end)
         end
         ll
       end
@@ -75,6 +74,48 @@ defmodule LinkedList.List do
       def at(ll, 0), do: head(ll)
       def at(ll, i) do
         find_at(head(ll), i)
+      end
+
+      @spec len(__MODULE__.t) :: integer
+      def len(ll) do
+        case head(ll) do
+          nil -> 0
+          node -> find_len(node, 1)
+        end
+      end
+
+      defp find_len(node, i) do
+        case Node.next(node) do
+          nil -> i
+          next_node -> find_len(next_node, i + 1)
+        end
+      end
+
+      @spec insert(__MODULE__.t, Node.t, integer) :: __MODULE__.t
+      def insert(ll, n, 0) when is_pid(n) do
+        Node.next(n, head(ll))
+        Agent.update(ll, fn list ->
+          %__MODULE__{ list | head: n }
+        end)
+      end
+      def insert(ll, n, i) when is_pid(n) do
+        cond do
+          i == len(ll) ->
+            append(ll, n)
+          i < len(ll) ->
+            before_node = at(ll, i-1)
+            after_node = at(ll, i)
+
+            Node.next(n, after_node)
+            Node.next(before_node, n)
+          true -> nil
+        end
+        ll
+      end
+
+      @spec insert(__MODULE__.t, any, integer) :: __MODULE__.t
+      def insert(ll, h, i) do
+        insert(ll, Node.new(h), i)
       end
 
       defp find_at(nil, i), do: nil

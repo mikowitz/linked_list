@@ -26,7 +26,7 @@ defmodule LinkedListTest do
   end
 
   test ".new(list) returns a linked list populated with nodes from list" do
-    list = LinkedList.new(["head", "body"])#, "tail"])
+    list = LinkedList.new(["head", "body"])
     head = LinkedList.head(list)
 
     assert is_pid(list)
@@ -57,5 +57,54 @@ defmodule LinkedListTest do
     assert is_pid(LinkedList.at(list, 2))
   end
 
-  test ".insert inserts"
+  test ".len returns the length of the list" do
+    list = LinkedList.new
+    assert LinkedList.len(list) == 0
+
+    LinkedList.append(list, "head")
+    assert LinkedList.len(list) == 1
+
+    LinkedList.append(list, "tail")
+    assert LinkedList.len(list) == 2
+  end
+
+  test ".insert inserts at the provided index" do
+    head = Node.new("head")
+    tail = Node.new("tail")
+    list = LinkedList.new
+    LinkedList.append(list, head)
+    LinkedList.append(list, tail)
+
+    node = Node.new("body")
+
+    LinkedList.insert(list, node, 1)
+    assert LinkedList.at(list, 1) == node
+    assert Node.next(head) == node
+    assert Node.next(node) == tail
+  end
+
+  test ".insert(0) inserts as the new head" do
+    head = Node.new("head")
+    tail = Node.new("tail")
+    list = LinkedList.new
+    LinkedList.append(list, head)
+    LinkedList.append(list, tail)
+
+    new_head = Node.new("hat")
+    LinkedList.insert(list, new_head, 0)
+    assert Node.next(new_head) == head
+  end
+
+  test ".insert(len) appends to the end of the list" do
+    head = Node.new("head")
+    tail = Node.new("tail")
+    list = LinkedList.new
+    LinkedList.append(list, head)
+    LinkedList.append(list, tail)
+
+    feet = Node.new("feet")
+
+    LinkedList.insert(list, feet, 2)
+    assert LinkedList.tail(list) == feet
+  end
 end
